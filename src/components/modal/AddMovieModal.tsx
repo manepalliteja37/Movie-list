@@ -522,8 +522,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                 }}
                 placeholder="ENTER MOVIE OR SERIES TITLE (e.g. KALKI 2898 AD, DUNE, SEVERANCE)..."
                 className={`w-full h-12 px-4 bg-[#0A0A0F] border rounded-xl font-poster text-lg sm:text-xl tracking-wide text-[#F5F5DC] placeholder-[#4e4e60] focus:outline-none transition-colors ${errors.title
-                    ? 'border-[#F5B301] ring-1 ring-[#F5B301]/50'
-                    : 'border-[#28283C] focus:border-[#F5B301]'
+                  ? 'border-[#F5B301] ring-1 ring-[#F5B301]/50'
+                  : 'border-[#28283C] focus:border-[#F5B301]'
                   }`}
               />
               {errors.title && (
@@ -630,13 +630,11 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                       }
                       if (errors.contentType) setErrors((prev) => ({ ...prev, contentType: undefined }));
                     }}
-                    className={`min-h-[2.25rem] py-1 px-1.5 text-[11px] sm:text-xs font-medium rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 chip-btn ${
-                      idx === 4 ? 'col-span-2 sm:col-span-1' : ''
-                    } ${
-                      active
+                    className={`min-h-[2.25rem] py-1 px-1.5 text-[11px] sm:text-xs font-medium rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 chip-btn ${idx === 4 ? 'col-span-2 sm:col-span-1' : ''
+                      } ${active
                         ? 'bg-[#F5B301] text-[#0A0A0F] font-bold shadow-md chip-active'
                         : 'text-[#A3A392] hover:text-[#F5F5DC] hover:bg-[#14141C]'
-                    }`}
+                      }`}
                   >
                     <span className="leading-tight">{CONTENT_TYPE_LABELS[type]}</span>
                   </button>
@@ -668,8 +666,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                     key={genre}
                     onClick={() => toggleGenre(genre)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 chip-btn ${active
-                        ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] shadow-sm chip-active'
-                        : 'bg-[#14141C] border-[#262638] text-[#737380] hover:text-[#A3A392] hover:border-[#38384d]'
+                      ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] shadow-sm chip-active'
+                      : 'bg-[#14141C] border-[#262638] text-[#737380] hover:text-[#A3A392] hover:border-[#38384d]'
                       }`}
                   >
                     {active && <Check size={12} className="stroke-[2.5]" />}
@@ -696,8 +694,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                     key={lang}
                     onClick={() => toggleLanguage(lang)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 chip-btn ${active
-                        ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] chip-active'
-                        : 'bg-[#14141C] border-[#262638] text-[#737380] hover:text-[#A3A392]'
+                      ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] chip-active'
+                      : 'bg-[#14141C] border-[#262638] text-[#737380] hover:text-[#A3A392]'
                       }`}
                   >
                     {active && <Check size={12} className="stroke-[2.5]" />}
@@ -724,8 +722,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                     key={platform}
                     onClick={() => togglePlatform(platform)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 chip-btn ${active
-                        ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] chip-active'
-                        : 'bg-[#14141C] border-[#262638] text-[#737380] hover:text-[#A3A392]'
+                      ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] chip-active'
+                      : 'bg-[#14141C] border-[#262638] text-[#737380] hover:text-[#A3A392]'
                       }`}
                   >
                     {active && <Check size={12} className="stroke-[2.5]" />}
@@ -851,14 +849,12 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                     className="sr-only"
                   />
                   <div
-                    className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${
-                      notifyOnRelease ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
-                    }`}
+                    className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifyOnRelease ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
+                      }`}
                   >
                     <div
-                      className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${
-                        notifyOnRelease ? 'translate-x-[20px]' : 'translate-x-0'
-                      }`}
+                      className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifyOnRelease ? 'translate-x-[20px]' : 'translate-x-0'
+                        }`}
                     >
                       {notifyOnRelease ? (
                         <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
