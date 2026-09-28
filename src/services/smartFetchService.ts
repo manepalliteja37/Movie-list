@@ -34,6 +34,7 @@ const GENRE_KEYWORD_MAP: Array<{ keywords: string[]; genre: string }> = [
   { keywords: ['thriller', 'psychological thriller', 'suspense'], genre: 'Thriller' },
   { keywords: ['horror', 'slasher', 'supernatural', 'zombie', 'haunted'], genre: 'Horror' },
   { keywords: ['comedy', 'satire', 'parody', 'sitcom', 'dark comedy'], genre: 'Comedy' },
+  { keywords: ['love story', 'love', 'heartbroken', 'relationship', 'feel good love story', 'romantic love story'], genre: 'Love Story' },
   { keywords: ['romance', 'romantic'], genre: 'Romance' },
   { keywords: ['drama', 'melodrama', 'period drama', 'historical drama'], genre: 'Drama' },
   { keywords: ['crime', 'heist', 'gangster', 'detective', 'noir'], genre: 'Crime' },
@@ -547,3 +548,147 @@ export async function smartFetchMovieMetadata(
 
   return uniqueResults.slice(0, 6);
 }
+
+/**
+ * YouTube Metadata Auto-Fetcher for Short Films & Videos
+ * Automatically pulls Title (Name), Genre, Language, Release Date, and Poster from YouTube URL.
+ */
+import { extractYouTubeVideoId, getYouTubeThumbnail } from './posterService';
+
+export interface YouTubeMetadataResult {
+  title: string;
+  cleanTitle: string;
+  genres: string[];
+  languages: string[];
+  releaseDate: string;
+  year?: number;
+  posterUrl: string;
+  trailerUrl: string;
+}
+
+export function parseYouTubeTitleMetadata(rawTitle: string): {
+  cleanTitle: string;
+  genres: string[];
+  languages: string[];
+  releaseDate: string;
+  year?: number;
+} {
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  if (!rawTitle) {
+    return {
+      cleanTitle: 'YouTube Short Film',
+      genres: ['Love Story'],
+      languages: ['Telugu'],
+      releaseDate: todayStr,
+    };
+  }
+
+  // 1. Extract Year
+  let year: number | undefined;
+  const yearMatch = rawTitle.match(/\b(19\d\d|20\d\d)\b/);
+  if (yearMatch) {
+    year = parseInt(yearMatch[1], 10);
+  }
+
+  const defaultDate = year ? `${year}-01-01` : todayStr;
+
+  // 2. Extract Languages
+  const languages = extractLanguagesFromText(rawTitle);
+  if (languages.length === 1 && languages[0] === 'English' && /telugu/i.test(rawTitle)) {
+    languages[0] = 'Telugu';
+  } else if (languages.length === 0) {
+    languages.push('Telugu');
+  }
+
+  // 3. Extract Genres
+  const genres = extractGenresFromText(rawTitle);
+  if (/love|heart|relationship|feel good|prem/i.test(rawTitle) && !genres.includes('Love Story')) {
+    genres.unshift('Love Story');
+  }
+  if (genres.length === 1 && genres[0] === 'Cinema') {
+    genres[0] = 'Love Story';
+  }
+
+  // 4. Extract Clean Title
+  const parts = rawTitle
+    .split(/[-|:;/[\]()•]+/)
+    .map((p) => p.trim())
+    .filter((p) => {
+      const lower = p.toLowerCase();
+      if (!lower) return false;
+      if (
+        lower.includes('short film') ||
+        lower.includes('shortfilm') ||
+        lower.includes('full movie') ||
+        lower.includes('official') ||
+        lower.includes('trailer') ||
+        lower.includes('teaser') ||
+        lower.includes('4k') ||
+        lower.includes('hd') ||
+        lower.includes('award winning') ||
+        lower.includes('directed by') ||
+        lower.includes('dir by')
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+  let cleanTitle = parts.length > 0 && parts[0].length >= 2 ? parts[0] : rawTitle.trim();
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+
+  return {
+    cleanTitle: cleanTitle || 'YouTube Short Film',
+    genres,
+    languages,
+    releaseDate: defaultDate,
+    year,
+  };
+}
+
+export async function fetchYouTubeMetadata(urlOrId: string): Promise<YouTubeMetadataResult | null> {
+  const videoId = extractYouTubeVideoId(urlOrId);
+  if (!videoId) return null;
+
+  const trailerUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const posterUrl = getYouTubeThumbnail(videoId, 'maxres') || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+  let rawTitle = '';
+
+  try {
+    const oembedResp = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(trailerUrl)}&format=json`);
+    if (oembedResp.ok) {
+      const data = await oembedResp.json();
+      rawTitle = data.title || '';
+    }
+  } catch {
+    // network / cors fallback
+  }
+
+  if (!rawTitle) {
+    try {
+      const noembedResp = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(trailerUrl)}`);
+      if (noembedResp.ok) {
+        const data = await noembedResp.json();
+        rawTitle = data.title || '';
+      }
+    } catch {
+      // network fallback
+    }
+  }
+
+  const parsed = parseYouTubeTitleMetadata(rawTitle);
+
+  return {
+    title: rawTitle,
+    cleanTitle: parsed.cleanTitle,
+    genres: parsed.genres,
+    languages: parsed.languages,
+    releaseDate: parsed.releaseDate,
+    year: parsed.year,
+    posterUrl,
+    trailerUrl,
+  };
+}
+

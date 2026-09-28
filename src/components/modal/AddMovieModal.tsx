@@ -30,7 +30,7 @@ import { TicketButton } from '../common/TicketButton';
 import { ClapperboardIcon, TicketIcon } from '../common/CinematicIcons';
 import { PosterPicker } from '../common/PosterPicker';
 import { SmartFetchAutocomplete } from '../common/SmartFetchAutocomplete';
-import { SmartFetchMovieResult } from '../../services/smartFetchService';
+import { SmartFetchMovieResult, fetchYouTubeMetadata } from '../../services/smartFetchService';
 import { extractYouTubeVideoId, getYouTubeThumbnail } from '../../services/posterService';
 
 import { requestNotificationPermission } from '../../services/notificationService';
@@ -283,37 +283,86 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
     );
   };
 
+  const handleProcessYouTubeLink = async (url: string) => {
+    if (!url) return;
+    const ytId = extractYouTubeVideoId(url);
+    if (!ytId) return;
+
+    setTrailerUrl(url);
+
+    // Auto-select YouTube in streaming platforms
+    setPlatforms((prev) => (prev.includes('YouTube') ? prev : [...prev, 'YouTube']));
+
+    // Fetch rich metadata from YouTube
+    const ytData = await fetchYouTubeMetadata(url);
+
+    if (ytData) {
+      const previous = {
+        title,
+        contentType,
+        releaseDate,
+        genres: [...genres],
+        languages: [...languages],
+        posterUrl,
+      };
+
+      const filledFields: string[] = [];
+
+      // Auto-fill Name (Title)
+      if (ytData.cleanTitle && (!title || title.trim().length === 0 || contentType === 'shortfilm')) {
+        setTitle(ytData.cleanTitle);
+        filledFields.push(`Name (${ytData.cleanTitle})`);
+      }
+
+      // Auto-fill Poster
+      if (ytData.posterUrl) {
+        setPosterUrl(ytData.posterUrl);
+        filledFields.push('Poster');
+      }
+
+      // Auto-fill Release Date
+      if (ytData.releaseDate) {
+        setReleaseDate(ytData.releaseDate);
+        filledFields.push(`Date (${ytData.releaseDate})`);
+      }
+
+      // Auto-fill Genres
+      if (ytData.genres && ytData.genres.length > 0) {
+        setGenres(ytData.genres);
+        filledFields.push(`Genre (${ytData.genres.join(', ')})`);
+      }
+
+      // Auto-fill Languages
+      if (ytData.languages && ytData.languages.length > 0) {
+        setLanguages(ytData.languages);
+        filledFields.push(`Language (${ytData.languages.join(', ')})`);
+      }
+
+      setErrors((prev) => ({ ...prev, title: undefined }));
+
+      setSmartFetchToast({
+        movieTitle: ytData.cleanTitle || 'YouTube Video',
+        details: filledFields,
+        previousState: previous,
+      });
+    }
+  };
+
   const handlePasteTrailer = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text && (text.includes('youtube.com') || text.includes('youtu.be') || text.startsWith('http'))) {
-        setTrailerUrl(text);
-        // Auto-extract high-res YouTube thumbnail if poster is empty
-        const ytId = extractYouTubeVideoId(text);
-        if (ytId && !posterUrl) {
-          const ytThumb = getYouTubeThumbnail(ytId, 'maxres');
-          if (ytThumb) setPosterUrl(ytThumb);
-        }
+      if (text && extractYouTubeVideoId(text)) {
+        await handleProcessYouTubeLink(text);
       } else {
-        const manual = prompt('Paste YouTube or trailer link here:');
-        if (manual) {
-          setTrailerUrl(manual);
-          const ytId = extractYouTubeVideoId(manual);
-          if (ytId && !posterUrl) {
-            const ytThumb = getYouTubeThumbnail(ytId, 'maxres');
-            if (ytThumb) setPosterUrl(ytThumb);
-          }
+        const manual = prompt('Paste YouTube link here:');
+        if (manual && extractYouTubeVideoId(manual)) {
+          await handleProcessYouTubeLink(manual);
         }
       }
     } catch {
-      const manual = prompt('Paste YouTube or trailer link here:');
-      if (manual) {
-        setTrailerUrl(manual);
-        const ytId = extractYouTubeVideoId(manual);
-        if (ytId && !posterUrl) {
-          const ytThumb = getYouTubeThumbnail(ytId, 'maxres');
-          if (ytThumb) setPosterUrl(ytThumb);
-        }
+      const manual = prompt('Paste YouTube link here:');
+      if (manual && extractYouTubeVideoId(manual)) {
+        await handleProcessYouTubeLink(manual);
       }
     }
   };
@@ -464,8 +513,12 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                 autoFocus
                 value={title}
                 onChange={(e) => {
-                  setTitle(e.target.value);
+                  const val = e.target.value;
+                  setTitle(val);
                   if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
+                  if (extractYouTubeVideoId(val)) {
+                    handleProcessYouTubeLink(val);
+                  }
                 }}
                 placeholder="ENTER MOVIE OR SERIES TITLE (e.g. KALKI 2898 AD, DUNE, SEVERANCE)..."
                 className={`w-full h-12 px-4 bg-[#0A0A0F] border rounded-xl font-poster text-lg sm:text-xl tracking-wide text-[#F5F5DC] placeholder-[#4e4e60] focus:outline-none transition-colors ${errors.title
@@ -569,6 +622,12 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                     key={type}
                     onClick={() => {
                       setContentType(type);
+                      if (type === 'shortfilm') {
+                        setPlatforms((prev) => (prev.includes('YouTube') ? prev : [...prev, 'YouTube']));
+                        if (trailerUrl && extractYouTubeVideoId(trailerUrl)) {
+                          handleProcessYouTubeLink(trailerUrl);
+                        }
+                      }
                       if (errors.contentType) setErrors((prev) => ({ ...prev, contentType: undefined }));
                     }}
                     className={`min-h-[2.25rem] py-1 px-1.5 text-[11px] sm:text-xs font-medium rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 chip-btn ${
@@ -851,10 +910,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
                 onChange={(e) => {
                   const val = e.target.value;
                   setTrailerUrl(val);
-                  const ytId = extractYouTubeVideoId(val);
-                  if (ytId && !posterUrl) {
-                    const ytThumb = getYouTubeThumbnail(ytId, 'maxres');
-                    if (ytThumb) setPosterUrl(ytThumb);
+                  if (extractYouTubeVideoId(val)) {
+                    handleProcessYouTubeLink(val);
                   }
                 }}
                 placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."

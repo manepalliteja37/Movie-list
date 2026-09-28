@@ -105,6 +105,7 @@ export const COMMON_GENRES = [
   'Adventure',
   'Biography',
   'Family',
+  'Love Story',
   'Musical',
   'War',
   'Western',
