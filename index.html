@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" class="dark theme-theatre-dark" data-theme="theatre-dark">
+  <head>
+    <script>
+      (function() {
+        try {
+          const raw = localStorage.getItem('movielist-storage');
+          let theme = 'theatre-dark';
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            theme = parsed?.state?.settings?.theme || 'theatre-dark';
+          }
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.classList.remove('theme-theatre-dark', 'theme-cinema-light', 'theme-midnight-blue', 'theme-warm-red');
+          document.documentElement.classList.add('theme-' + theme);
+        } catch (e) {
+          document.documentElement.dataset.theme = 'theatre-dark';
+          document.documentElement.classList.add('theme-theatre-dark');
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Movielist - Your Cinematic Watchlist & Movie Tracker</title>
+    <meta name="description" content="Movielist is a privacy-first, cinematic movie & TV show tracker with AI smart-fetch metadata, live search trends, personalized poster cards, and offline sync." />
+    <meta name="keywords" content="movies, watchlist, film tracker, cinema, tv series, movie collection, movie tracker, trending movies, offline watchlist" />
+    <meta name="author" content="Movielist Team" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://movielist.app/" />
+
+    <!-- Open Graph / Facebook / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://movielist.app/" />
+    <meta property="og:site_name" content="Movielist" />
+    <meta property="og:title" content="Movielist - Your Cinematic Watchlist & Movie Tracker" />
+    <meta property="og:description" content="Track movies & TV shows in dark theatre ambiance with AI auto-fill metadata, custom poster cards, and offline sync." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Movielist - Cinematic Watchlist Application Interface Preview" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@movielistapp" />
+    <meta name="twitter:title" content="Movielist - Your Cinematic Watchlist & Movie Tracker" />
+    <meta name="twitter:description" content="Track movies & TV shows in dark theatre ambiance with AI auto-fill metadata, custom poster cards, and offline sync." />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- PWA & Favicon -->
+    <meta name="theme-color" content="#C41E3A" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Movielist" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Font Preconnect & Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;600;700&family=Cinzel:wght@500;700;800;900&family=Cinzel+Decorative:wght@700;900&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Telugu:wght@400;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body style="background-color: #0A0A0F; color: #F5F5DC; margin: 0; min-height: 100vh;">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

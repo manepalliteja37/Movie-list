@@ -1,0 +1,6 @@
+{
+  "name": "Movielist",
+  "description": "Cinematic movie and series watchlist to save recommendations and track watched films in a dark theatre ambiance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

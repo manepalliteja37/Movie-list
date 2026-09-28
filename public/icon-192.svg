@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="40" fill="#0A0A0F" />
+  <circle cx="96" cy="96" r="68" fill="#14141C" stroke="#C41E3A" stroke-width="6" />
+  <circle cx="96" cy="96" r="28" fill="#0A0A0F" stroke="#F5B301" stroke-width="5" />
+  <circle cx="96" cy="96" r="10" fill="#F5B301" />
+  <!-- Film reel holes -->
+  <circle cx="96" cy="50" r="12" fill="#0A0A0F" stroke="#F5B301" stroke-width="3" />
+  <circle cx="96" cy="142" r="12" fill="#0A0A0F" stroke="#F5B301" stroke-width="3" />
+  <circle cx="50" cy="96" r="12" fill="#0A0A0F" stroke="#F5B301" stroke-width="3" />
+  <circle cx="142" cy="96" r="12" fill="#0A0A0F" stroke="#F5B301" stroke-width="3" />
+  <circle cx="63" cy="63" r="10" fill="#0A0A0F" stroke="#F5B301" stroke-width="2.5" />
+  <circle cx="129" cy="63" r="10" fill="#0A0A0F" stroke="#F5B301" stroke-width="2.5" />
+  <circle cx="63" cy="129" r="10" fill="#0A0A0F" stroke="#F5B301" stroke-width="2.5" />
+  <circle cx="129" cy="129" r="10" fill="#0A0A0F" stroke="#F5B301" stroke-width="2.5" />
+</svg>
