@@ -29,6 +29,13 @@ import {
   Twitter,
   Github,
   Wrench,
+  Key,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Tv,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { FilmStripDivider } from '../common/FilmStripDivider';
 import { useMovieStore } from '../../store/useMovieStore';
@@ -44,12 +51,14 @@ interface SettingsPageProps {
   onShowToast?: (message: string) => void;
   onOpenShortcuts?: () => void;
   onOpenOnboarding?: () => void;
+  onOpenSplash?: () => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   onShowToast,
   onOpenShortcuts,
   onOpenOnboarding,
+  onOpenSplash,
 }) => {
   const {
     settings,
@@ -70,6 +79,72 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       setPermissionState(Notification.permission);
     }
   }, []);
+
+  // TMDB & OMDb API Configuration States
+  const [tmdbInput, setTmdbInput] = useState(settings.tmdbApiKey || '');
+  const [omdbInput, setOmdbInput] = useState(settings.omdbApiKey || '');
+  const [tmdbTestStatus, setTmdbTestStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
+  const [omdbTestStatus, setOmdbTestStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
+  const [showTmdbKey, setShowTmdbKey] = useState(false);
+  const [showOmdbKey, setShowOmdbKey] = useState(false);
+
+  useEffect(() => {
+    if (settings.tmdbApiKey !== undefined && settings.tmdbApiKey !== tmdbInput) {
+      setTmdbInput(settings.tmdbApiKey || '');
+    }
+    if (settings.omdbApiKey !== undefined && settings.omdbApiKey !== omdbInput) {
+      setOmdbInput(settings.omdbApiKey || '');
+    }
+  }, [settings.tmdbApiKey, settings.omdbApiKey]);
+
+  const handleTestTmdbKey = async () => {
+    const key = tmdbInput.trim();
+    updateSettings({ tmdbApiKey: key });
+    if (!key) {
+      setTmdbTestStatus('idle');
+      onShowToast?.('TMDB API Key removed');
+      return;
+    }
+    setTmdbTestStatus('testing');
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${encodeURIComponent(key)}`);
+      if (res.ok) {
+        setTmdbTestStatus('valid');
+        onShowToast?.('TMDB Key verified! Connected to TMDB 🎬');
+      } else {
+        setTmdbTestStatus('invalid');
+        onShowToast?.('Invalid TMDB Key. Please check your developer key.');
+      }
+    } catch {
+      setTmdbTestStatus('invalid');
+      onShowToast?.('Failed to verify TMDB key. Check network connection.');
+    }
+  };
+
+  const handleTestOmdbKey = async () => {
+    const key = omdbInput.trim();
+    updateSettings({ omdbApiKey: key });
+    if (!key) {
+      setOmdbTestStatus('idle');
+      onShowToast?.('OMDb API Key removed');
+      return;
+    }
+    setOmdbTestStatus('testing');
+    try {
+      const res = await fetch(`https://www.omdbapi.com/?apikey=${encodeURIComponent(key)}&t=Inception`);
+      const data = await res.json();
+      if (data.Response === 'True') {
+        setOmdbTestStatus('valid');
+        onShowToast?.('OMDb Key verified! Connected to OMDb 🎬');
+      } else {
+        setOmdbTestStatus('invalid');
+        onShowToast?.(`OMDb error: ${data.Error || 'Invalid Key'}`);
+      }
+    } catch {
+      setOmdbTestStatus('invalid');
+      onShowToast?.('Failed to verify OMDb key. Check network connection.');
+    }
+  };
 
   // Theme changing
   const themes: { id: ThemeOption; name: string; description: string; previewBg: string; border: string }[] = [
@@ -493,14 +568,99 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
             {settings.notificationsEnabled && (
               <div className="pt-4 border-t border-[#20202E] space-y-4">
-                {/* Granular Schedule Toggles: Release Day, 3 Days Before, 1 Day Before */}
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-[#A3A392] uppercase tracking-wider">
-                    Notification Schedule
+                {/* Granular Schedule Toggles with Movie Lover Slang */}
+                <div className="space-y-2.5">
+                  <div className="text-xs font-semibold text-[#A3A392] uppercase tracking-wider flex items-center justify-between">
+                    <span>Movie Lovers Alert Schedule</span>
+                    <span className="text-[10px] font-mono text-[#F5B301]">Cinephile Slang</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <label className="flex items-center justify-between gap-2.5 p-3 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-[#383852] transition-colors select-none">
-                      <span className="text-xs font-medium text-[#F5F5DC]">On Release Day</span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* 1. 7 Days Before: "Did you plan to watch movie?" */}
+                    <label className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-[#F5B301]/40 transition-colors select-none">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-[#F5F5DC] flex items-center gap-1.5">
+                          <span>🎟️ 7 Days Before</span>
+                        </div>
+                        <div className="text-[11px] text-[#F5B301] font-medium mt-0.5">
+                          "Did you plan to watch the movie?"
+                        </div>
+                        <div className="text-[10px] text-[#737380] mt-0.5">
+                          Weekly watch plan & friends gang alert
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={notifications.notifySevenDaysBefore ?? true}
+                        onChange={(e) => updateNotifPref({ notifySevenDaysBefore: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${(notifications.notifySevenDaysBefore ?? true) ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
+                          }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${(notifications.notifySevenDaysBefore ?? true) ? 'translate-x-[20px]' : 'translate-x-0'
+                            }`}
+                        >
+                          {(notifications.notifySevenDaysBefore ?? true) ? (
+                            <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                          ) : (
+                            <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                          )}
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* 2. 3 Days Before: "Did you buy a ticket?" */}
+                    <label className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-[#FF5A6E]/40 transition-colors select-none">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-[#F5F5DC] flex items-center gap-1.5">
+                          <span>🍿 3 Days Before</span>
+                        </div>
+                        <div className="text-[11px] text-[#FF5A6E] font-medium mt-0.5">
+                          "Did you buy a ticket?"
+                        </div>
+                        <div className="text-[10px] text-[#737380] mt-0.5">
+                          Advance booking & seat availability check
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={notifications.notifyThreeDaysBefore}
+                        onChange={(e) => updateNotifPref({ notifyThreeDaysBefore: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifications.notifyThreeDaysBefore ? 'bg-[#FF5A6E]' : 'bg-[#1E1E2A]'
+                          }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifications.notifyThreeDaysBefore ? 'translate-x-[20px]' : 'translate-x-0'
+                            }`}
+                        >
+                          {notifications.notifyThreeDaysBefore ? (
+                            <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                          ) : (
+                            <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                          )}
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* 3. On Release Day: "Go watch in nearby theatres!" */}
+                    <label className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-emerald-500/40 transition-colors select-none">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-[#F5F5DC] flex items-center gap-1.5">
+                          <span>🎬 On Release Day</span>
+                        </div>
+                        <div className="text-[11px] text-emerald-400 font-medium mt-0.5">
+                          "Go watch in nearby theatres!"
+                        </div>
+                        <div className="text-[10px] text-[#737380] mt-0.5">
+                          First Day First Show (FDFS) big-screen alert
+                        </div>
+                      </div>
                       <input
                         type="checkbox"
                         checked={notifications.notifyOnReleaseDay}
@@ -508,7 +668,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         className="sr-only"
                       />
                       <div
-                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifications.notifyOnReleaseDay ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
+                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifications.notifyOnReleaseDay ? 'bg-emerald-500' : 'bg-[#1E1E2A]'
                           }`}
                       >
                         <div
@@ -524,48 +684,34 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       </div>
                     </label>
 
-                    <label className="flex items-center justify-between gap-2.5 p-3 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-[#383852] transition-colors select-none">
-                      <span className="text-xs font-medium text-[#F5F5DC]">1 Day Before</span>
-                      <input
-                        type="checkbox"
-                        checked={notifications.notifyOneDayBefore}
-                        onChange={(e) => updateNotifPref({ notifyOneDayBefore: e.target.checked })}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifications.notifyOneDayBefore ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
-                          }`}
-                      >
-                        <div
-                          className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifications.notifyOneDayBefore ? 'translate-x-[20px]' : 'translate-x-0'
-                            }`}
-                        >
-                          {notifications.notifyOneDayBefore ? (
-                            <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
-                          ) : (
-                            <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
-                          )}
+                    {/* 4. OTT Watchlist Check-Ins: "Did you watch it? How was it? Recommend to friend!" */}
+                    <label className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-[#38BDF8]/40 transition-colors select-none">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-[#F5F5DC] flex items-center gap-1.5">
+                          <span>📺 OTT Watchlist Check-Ins</span>
+                        </div>
+                        <div className="text-[11px] text-[#38BDF8] font-medium mt-0.5">
+                          "Did you watch it? How was it?"
+                        </div>
+                        <div className="text-[10px] text-[#737380] mt-0.5">
+                          Queue check-in & recommendation pass prompts
                         </div>
                       </div>
-                    </label>
-
-                    <label className="flex items-center justify-between gap-2.5 p-3 rounded-xl bg-[#0A0A0F] border border-[#20202E] cursor-pointer hover:border-[#383852] transition-colors select-none">
-                      <span className="text-xs font-medium text-[#F5F5DC]">3 Days Before</span>
                       <input
                         type="checkbox"
-                        checked={notifications.notifyThreeDaysBefore}
-                        onChange={(e) => updateNotifPref({ notifyThreeDaysBefore: e.target.checked })}
+                        checked={notifications.notifyOttWatchlistReminders ?? true}
+                        onChange={(e) => updateNotifPref({ notifyOttWatchlistReminders: e.target.checked })}
                         className="sr-only"
                       />
                       <div
-                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifications.notifyThreeDaysBefore ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
+                        className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${(notifications.notifyOttWatchlistReminders ?? true) ? 'bg-[#38BDF8]' : 'bg-[#1E1E2A]'
                           }`}
                       >
                         <div
-                          className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifications.notifyThreeDaysBefore ? 'translate-x-[20px]' : 'translate-x-0'
+                          className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${(notifications.notifyOttWatchlistReminders ?? true) ? 'translate-x-[20px]' : 'translate-x-0'
                             }`}
                         >
-                          {notifications.notifyThreeDaysBefore ? (
+                          {(notifications.notifyOttWatchlistReminders ?? true) ? (
                             <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
                           ) : (
                             <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
@@ -768,29 +914,285 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* ========================================================= */}
-        {/* 4. ABOUT SECTION */}
+        {/* 4. CINEMA & ANIME METADATA APIS */}
         {/* ========================================================= */}
         <div className="space-y-4">
-          <FilmStripDivider label="4. ABOUT & CREDITS" animated={false} />
+          <FilmStripDivider label="4. CINEMA & ANIME METADATA APIS" animated={false} />
+
+          <div className="bg-[#14141C] border border-[#28283C] rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
+            <div>
+              <div className="text-sm font-semibold text-[#F5F5DC] flex items-center gap-2">
+                <Sparkles size={16} className="text-[#F5B301]" />
+                <span>Metadata Auto-Fetch Pipeline</span>
+              </div>
+              <p className="text-xs text-[#737380] mt-1 leading-relaxed">
+                When you enter a title in the Cinema Entry form, Movielist searches high-quality open databases in parallel to auto-fill posters, exact release dates, genres, and regional titles.
+              </p>
+            </div>
+
+            {/* Out-of-the-Box Keyless Providers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {/* AniList Card */}
+              <div className="p-4 rounded-xl bg-[#0A0A0F] border border-[#3B125C]/60 hover:border-[#A855F7]/80 transition-colors space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#3B125C] flex items-center justify-center text-[#D8B4FE]">
+                      <Zap size={14} className="fill-[#D8B4FE]" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#F5F5DC]">AniList API</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#3B125C]/80 text-[#D8B4FE] border border-[#A855F7]/40">
+                    Active · Keyless GraphQL
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#A3A392] leading-relaxed">
+                  Fast, comprehensive anime data covering anime movies, seasonal TV series, Japanese native titles, exact release dates, and HD cover posters.
+                </p>
+              </div>
+
+              {/* Cinemeta & TVMaze Card */}
+              <div className="p-4 rounded-xl bg-[#0A0A0F] border border-[#28220A] hover:border-[#F5B301]/60 transition-colors space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#28220A] flex items-center justify-center text-[#F5B301]">
+                      <FilmReelIcon size={14} />
+                    </div>
+                    <span className="text-xs font-semibold text-[#F5F5DC]">IMDb / Cinemeta & TVMaze</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#28220A] text-[#F5B301] border border-[#F5B301]/40">
+                    Active · Keyless Open DB
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#A3A392] leading-relaxed">
+                  Pulls recent theatrical movies (e.g. 2024–2026 releases), Telugu/Indian regional cinema, and worldwide TV series with high-resolution posters.
+                </p>
+              </div>
+            </div>
+
+            {/* Optional Personal API Keys */}
+            <div className="pt-2 border-t border-[#20202E] space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-[#F5F5DC] flex items-center gap-1.5">
+                    <Key size={13} className="text-[#F5B301]" />
+                    <span>Optional Personal API Keys (TMDB & OMDb)</span>
+                  </div>
+                  <div className="text-[11px] text-[#737380] mt-0.5">
+                    Add your free API key to unlock official The Movie Database or OMDb search results.
+                  </div>
+                </div>
+              </div>
+
+              {/* 1. TMDB API Key Input */}
+              <div className="p-4 rounded-xl bg-[#0A0A0F] border border-[#242436] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#F5F5DC]">The Movie Database (TMDB) API</span>
+                    {settings.tmdbApiKey ? (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        {tmdbTestStatus === 'valid' ? 'Connected' : 'Configured'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1C1C28] text-[#737380] border border-[#28283C]">
+                        Free Key Optional
+                      </span>
+                    )}
+                  </div>
+
+                  <a
+                    href="https://www.themoviedb.org/settings/api"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[#38BDF8] hover:underline flex items-center gap-1"
+                  >
+                    <span>Get Free TMDB Key</span>
+                    <ExternalLink size={10} />
+                  </a>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                  <div className="relative w-full">
+                    <input
+                      type={showTmdbKey ? 'text' : 'password'}
+                      value={tmdbInput}
+                      onChange={(e) => {
+                        setTmdbInput(e.target.value);
+                        setTmdbTestStatus('idle');
+                      }}
+                      placeholder="Paste your TMDB v3 API Key (e.g. 3fc8d...)"
+                      className="w-full bg-[#14141C] border border-[#2c2c40] rounded-xl px-3.5 py-2 pr-9 text-xs font-mono text-[#F5F5DC] focus:outline-none focus:border-[#F5B301] transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowTmdbKey(!showTmdbKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737380] hover:text-[#F5F5DC] cursor-pointer"
+                      title={showTmdbKey ? 'Hide key' : 'Show key'}
+                    >
+                      {showTmdbKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTestTmdbKey}
+                    disabled={tmdbTestStatus === 'testing'}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#1C1C28] hover:bg-[#252536] border border-[#28283C] hover:border-[#F5B301]/50 text-xs font-medium text-[#F5F5DC] flex items-center justify-center gap-2 shrink-0 transition-colors cursor-pointer"
+                  >
+                    {tmdbTestStatus === 'testing' ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin text-[#F5B301]" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : tmdbTestStatus === 'valid' ? (
+                      <>
+                        <CheckCircle2 size={12} className="text-emerald-400" />
+                        <span>Verified & Saved</span>
+                      </>
+                    ) : tmdbTestStatus === 'invalid' ? (
+                      <>
+                        <XCircle size={12} className="text-[#FF5A6E]" />
+                        <span>Invalid Key</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check size={12} className="text-[#F5B301]" />
+                        <span>Save & Test Key</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. OMDb API Key Input */}
+              <div className="p-4 rounded-xl bg-[#0A0A0F] border border-[#242436] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#F5F5DC]">OMDb API (The Open Movie Database)</span>
+                    {settings.omdbApiKey ? (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        {omdbTestStatus === 'valid' ? 'Connected' : 'Configured'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1C1C28] text-[#737380] border border-[#28283C]">
+                        Free 1k/day Key Optional
+                      </span>
+                    )}
+                  </div>
+
+                  <a
+                    href="https://www.omdbapi.com/apikey.aspx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[#38BDF8] hover:underline flex items-center gap-1"
+                  >
+                    <span>Get Free OMDb Key</span>
+                    <ExternalLink size={10} />
+                  </a>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                  <div className="relative w-full">
+                    <input
+                      type={showOmdbKey ? 'text' : 'password'}
+                      value={omdbInput}
+                      onChange={(e) => {
+                        setOmdbInput(e.target.value);
+                        setOmdbTestStatus('idle');
+                      }}
+                      placeholder="Paste your OMDb API Key (e.g. 7a2b9c1d)"
+                      className="w-full bg-[#14141C] border border-[#2c2c40] rounded-xl px-3.5 py-2 pr-9 text-xs font-mono text-[#F5F5DC] focus:outline-none focus:border-[#F5B301] transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOmdbKey(!showOmdbKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737380] hover:text-[#F5F5DC] cursor-pointer"
+                      title={showOmdbKey ? 'Hide key' : 'Show key'}
+                    >
+                      {showOmdbKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTestOmdbKey}
+                    disabled={omdbTestStatus === 'testing'}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#1C1C28] hover:bg-[#252536] border border-[#28283C] hover:border-[#F5B301]/50 text-xs font-medium text-[#F5F5DC] flex items-center justify-center gap-2 shrink-0 transition-colors cursor-pointer"
+                  >
+                    {omdbTestStatus === 'testing' ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin text-[#F5B301]" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : omdbTestStatus === 'valid' ? (
+                      <>
+                        <CheckCircle2 size={12} className="text-emerald-400" />
+                        <span>Verified & Saved</span>
+                      </>
+                    ) : omdbTestStatus === 'invalid' ? (
+                      <>
+                        <XCircle size={12} className="text-[#FF5A6E]" />
+                        <span>Invalid Key</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check size={12} className="text-[#F5B301]" />
+                        <span>Save & Test Key</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Note on YouTube for Short films */}
+            <div className="p-3 rounded-xl bg-[#101018] border border-[#1E1E2C] flex items-center gap-2.5 text-[11px] text-[#A3A392]">
+              <Youtube size={15} className="text-[#FF0000] shrink-0" />
+              <span>
+                <strong className="text-[#F5F5DC]">Short Films:</strong> Simply paste any YouTube link into the title or trailer box to automatically extract title, HD poster, and date!
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* 5. ABOUT SECTION */}
+        {/* ========================================================= */}
+        <div className="space-y-4">
+          <FilmStripDivider label="5. ABOUT & CREDITS" animated={false} />
 
           <div className="bg-[#14141C] border border-[#28283C] rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0A0A0F] border border-[#F5B301]/40 flex items-center justify-center text-[#F5B301]">
-                  <FilmReelIcon size={22} />
+                <div className="w-11 h-11 rounded-2xl p-0.5 bg-gradient-to-br from-white via-[#F8FAFC] to-[#E2E8F0] border border-white/80 shadow-[0_0_15px_rgba(0,229,255,0.35)] flex items-center justify-center shrink-0 overflow-hidden">
+                  <img
+                    src="/apple-touch-icon.png"
+                    alt="Movielist App Icon"
+                    className="w-full h-full object-cover rounded-[13px]"
+                  />
                 </div>
                 <div>
-                  <div className="font-poster text-xl tracking-wider text-[#F5F5DC]">
-                    MOVIELIST CINEMATIC WATCHLIST
+                  <div className="font-poster text-xl tracking-wider text-[#F5B301]">
+                    MOVIELIST - CINEMATIC WATCHLIST
                   </div>
                   <div className="text-xs text-[#737380] font-mono">
                     Version 2.4.0 (PWA Ready)
                   </div>
                 </div>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                PROD
-              </span>
+              <div className="flex items-center gap-2">
+                {onOpenSplash && (
+                  <button
+                    type="button"
+                    onClick={onOpenSplash}
+                    className="text-[11px] font-poster tracking-wider text-[#F5B301] hover:text-[#0A0A0F] hover:bg-[#F5B301] border border-[#F5B301]/40 px-2.5 py-1 rounded-lg uppercase transition-all duration-200 cursor-pointer"
+                  >
+                    Preview App Screen
+                  </button>
+                )}
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  PROD
+                </span>
+              </div>
             </div>
 
             <div className="text-xs text-[#A3A392] leading-relaxed space-y-2 border-t border-[#20202E] pt-3">

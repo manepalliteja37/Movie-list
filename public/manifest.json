@@ -1,15 +1,21 @@
 {
   "id": "/",
-  "name": "Movielist - Cinematic Watchlist",
+  "name": "Movielist",
   "short_name": "Movielist",
   "description": "Cinematic movie and series watchlist to save recommendations and track watched films.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#C41E3A",
+  "theme_color": "#0A0A0F",
   "background_color": "#0A0A0F",
   "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.svg",
       "sizes": "192x192",

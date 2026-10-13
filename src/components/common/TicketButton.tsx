@@ -61,29 +61,35 @@ export const TicketButton: React.FC<TicketButtonProps> = ({
           <div className="ticket-stub-overlay absolute inset-0 pointer-events-none" />
 
           {/* Star Rating Header */}
-          <div className="ticket-stars">
+          <div className="ticket-stars shrink-0">
             <span>★</span>
-            <span className="text-[1.25em]">★</span>
+            <span className="text-[1.15em]">★</span>
             <span>★</span>
           </div>
 
           {/* Stub Text Label */}
-          <div className="ticket-text-label">
-            <span className="block text-[12px] font-mono font-black tracking-widest text-center opacity-100">CINEMA</span>
-            <span className="block text-[8px] font-mono font-bold text-center opacity-90 mt-0.5">ADMIT 1</span>
+          <div className="ticket-text-label shrink-0">
+            <span className="block text-[9.5px] sm:text-[10.5px] font-mono font-black tracking-widest text-center leading-none opacity-100">
+              CINEMA
+            </span>
+            <span className="block text-[7px] sm:text-[7.5px] font-mono font-bold text-center tracking-wider leading-none opacity-90 mt-1">
+              ADMIT 1
+            </span>
           </div>
 
-          {/* Barcode Graphic */}
-          <div className="ticket-barcode">
-            <span className="w-[1.5px] h-full bg-current" />
-            <span className="w-[3px] h-full bg-current ml-[1px]" />
-            <span className="w-[1px] h-full bg-current ml-[1px]" />
-            <span className="w-[2.5px] h-full bg-current ml-[1px]" />
-            <span className="w-[1px] h-full bg-current ml-[1px]" />
-            <span className="w-[2px] h-full bg-current ml-[1px]" />
-            <span className="w-[3px] h-full bg-current ml-[1px]" />
-            <span className="w-[1px] h-full bg-current ml-[1px]" />
-          </div>
+          {/* Barcode Graphic (only on large sizes where height allows) */}
+          {size === 'lg' && (
+            <div className="ticket-barcode shrink-0 mt-0.5">
+              <span className="w-[1.5px] h-full bg-current" />
+              <span className="w-[3px] h-full bg-current ml-[1px]" />
+              <span className="w-[1px] h-full bg-current ml-[1px]" />
+              <span className="w-[2.5px] h-full bg-current ml-[1px]" />
+              <span className="w-[1px] h-full bg-current ml-[1px]" />
+              <span className="w-[2px] h-full bg-current ml-[1px]" />
+              <span className="w-[3px] h-full bg-current ml-[1px]" />
+              <span className="w-[1px] h-full bg-current ml-[1px]" />
+            </div>
+          )}
         </div>
       )}
 

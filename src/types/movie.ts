@@ -43,9 +43,11 @@ export interface NotificationPreferences {
   quietHoursEnabled: boolean;
   quietHoursStart: string; // e.g., "23:00"
   quietHoursEnd: string; // e.g., "07:00"
-  notifyOnReleaseDay: boolean;
-  notifyThreeDaysBefore: boolean;
+  notifyOnReleaseDay: boolean; // "Go watch in nearby theatres!"
+  notifyThreeDaysBefore: boolean; // "Did you buy a ticket?"
+  notifySevenDaysBefore: boolean; // "Did you plan to watch movie?"
   notifyOneDayBefore: boolean;
+  notifyOttWatchlistReminders: boolean; // "Did you watch it? How was it? Did you recommend to your friend?"
 }
 
 export interface ReleaseAlert {
@@ -54,6 +56,10 @@ export interface ReleaseAlert {
   title: string;
   platform: string;
   releaseDate: string;
+  type?: 'release' | '7day' | '3day' | '1day' | 'ott_reminder' | 'ott_review' | 'ott_recommend';
+  headline?: string;
+  message?: string;
+  actionType?: 'view' | 'watch' | 'share';
   dismissed?: boolean;
 }
 
@@ -79,6 +85,8 @@ export interface AppSettings {
   onboardingCompleted: boolean;
   preferTeluguDisplay: boolean;
   shareHistory: ShareHistoryItem[];
+  tmdbApiKey?: string;
+  omdbApiKey?: string;
 }
 
 export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {

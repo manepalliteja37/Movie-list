@@ -47,7 +47,7 @@
     <meta name="twitter:image" content="/og-image.png" />
 
     <!-- PWA & Favicon -->
-    <meta name="theme-color" content="#C41E3A" />
+    <meta name="theme-color" content="#0A0A0F" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -62,6 +62,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;600;700&family=Cinzel:wght@500;700;800;900&family=Cinzel+Decorative:wght@700;900&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Telugu:wght@400;600;700&display=swap" rel="stylesheet">
   </head>
   <body style="background-color: #0A0A0F; color: #F5F5DC; margin: 0; min-height: 100vh;">
+    <!-- Immediate Mobile App Opening Screen (Displays instantly when clicking mobile app icon) -->
+    <div id="pwa-launch-splash" style="position: fixed; inset: 0; z-index: 99999; background-color: #0A0A0F; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 48px 24px; box-sizing: border-box; transition: opacity 0.4s ease, visibility 0.4s ease; min-height: 100dvh;">
+      <div style="font-family: monospace; font-size: 11px; letter-spacing: 0.2em; color: #737380; text-transform: uppercase; padding-top: 16px;">
+        • CINEMA COMPANION •
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="position: relative; padding: 5px; border-radius: 26px; background: linear-gradient(135deg, #FFFFFF, #E2E8F0); box-shadow: 0 0 35px rgba(0, 229, 255, 0.4), 0 15px 30px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.85);">
+          <img src="/apple-touch-icon.png" width="112" height="112" style="border-radius: 22px; display: block; object-fit: contain;" alt="Movielist App Icon" />
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding-bottom: 24px;">
+        <div style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.22em; color: #F5B301; text-transform: uppercase; text-shadow: 0 0 16px rgba(245, 179, 1, 0.5);">
+          movielist- cinematic watchlist
+        </div>
+        <div style="margin-top: 8px; font-family: monospace; font-size: 10px; letter-spacing: 0.15em; color: rgba(245, 179, 1, 0.8); text-transform: uppercase;">
+          Curate • Watch • Discover
+        </div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

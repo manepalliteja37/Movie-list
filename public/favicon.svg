@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="10" fill="#0A0A0F"/>
-  <circle cx="12" cy="12" r="3" fill="#F5B301"/>
-  <circle cx="12" cy="5" r="1" fill="#F5B301"/>
-  <circle cx="12" cy="19" r="1" fill="#F5B301"/>
-  <circle cx="5" cy="12" r="1" fill="#F5B301"/>
-  <circle cx="19" cy="12" r="1" fill="#F5B301"/>
-  <path d="M7.05 7.05l1.41 1.41M15.54 15.54l1.41 1.41M7.05 16.95l1.41-1.41M15.54 8.46l1.41-1.41"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M18 9l-2 12H8L6 9" />
+  <path d="M10 9v12" stroke-dasharray="1.5 2" />
+  <path d="M14 9v12" stroke-dasharray="1.5 2" />
+  <!-- Popcorn fluffy top -->
+  <circle cx="7" cy="6" r="2.5" />
+  <circle cx="12" cy="4.5" r="2.5" />
+  <circle cx="17" cy="6" r="2.5" />
+  <circle cx="9.5" cy="7" r="2" />
+  <circle cx="14.5" cy="7" r="2" />
 </svg>

@@ -68,7 +68,9 @@ const initialSettings: AppSettings = {
     quietHoursEnd: '07:00',
     notifyOnReleaseDay: true,
     notifyThreeDaysBefore: true,
+    notifySevenDaysBefore: true,
     notifyOneDayBefore: true,
+    notifyOttWatchlistReminders: true,
   },
   theme: 'theatre-dark',
   fontSize: 'medium',
@@ -76,6 +78,8 @@ const initialSettings: AppSettings = {
   onboardingCompleted: false,
   preferTeluguDisplay: true,
   shareHistory: [],
+  tmdbApiKey: '',
+  omdbApiKey: '',
 };
 
 export const sampleMovies: Movie[] = [

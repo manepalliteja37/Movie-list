@@ -164,11 +164,11 @@ export const SmartFetchAutocomplete: React.FC<SmartFetchAutocompleteProps> = ({
             {isLoading && results.length === 0 ? (
               <div className="p-6 text-center text-xs text-[#A3A392] flex flex-col items-center justify-center gap-2">
                 <Loader2 size={24} className="animate-spin text-[#F5B301]" />
-                <span>Searching Wikipedia, TVMaze & iTunes databases...</span>
+                <span>Searching AniList, IMDb / Cinemeta, TVMaze & TMDB...</span>
               </div>
             ) : results.length === 0 ? (
               <div className="p-5 text-center text-xs text-[#737380]">
-                No exact cinema metadata found for "{titleQuery}". You can enter details manually or paste an image link below.
+                No exact cinema metadata found for "{titleQuery}". You can enter details manually or paste a link below.
               </div>
             ) : (
               results.map((item) => (
@@ -195,14 +195,40 @@ export const SmartFetchAutocomplete: React.FC<SmartFetchAutocompleteProps> = ({
 
                   {/* Metadata Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-poster text-base text-[#F5F5DC] group-hover:text-[#F5B301] transition-colors truncate">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-poster text-base text-[#F5F5DC] group-hover:text-[#F5B301] transition-colors truncate max-w-[200px] sm:max-w-[260px]">
                         {item.displayTitle}
                       </h4>
                       <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-[#242436] text-[#A3A392] shrink-0">
                         {CONTENT_TYPE_LABELS[item.contentType]}
                       </span>
+
+                      {/* Source badge */}
+                      {item.source === 'anilist' ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-medium uppercase bg-[#3B125C]/80 text-[#D8B4FE] border border-[#A855F7]/40 shrink-0">
+                          AniList
+                        </span>
+                      ) : item.source === 'cinemeta' ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-medium uppercase bg-[#28220A] text-[#F5B301] border border-[#F5B301]/40 shrink-0">
+                          IMDb / Open
+                        </span>
+                      ) : item.source === 'tmdb' ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-medium uppercase bg-[#062419] text-[#34D399] border border-[#10B981]/40 shrink-0">
+                          TMDB
+                        </span>
+                      ) : item.source === 'tvmaze' ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-medium uppercase bg-[#0C1E38] text-[#60A5FA] border border-[#3B82F6]/40 shrink-0">
+                          TVMaze
+                        </span>
+                      ) : null}
                     </div>
+
+                    {/* Original / Native title if present */}
+                    {item.originalTitle && item.originalTitle !== item.title && (
+                      <div className="text-[10px] text-[#A3A392] italic truncate font-sans">
+                        {item.originalTitle}
+                      </div>
+                    )}
 
                     {/* Genres & Release Date */}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[#A3A392] mt-0.5">
@@ -251,8 +277,8 @@ export const SmartFetchAutocomplete: React.FC<SmartFetchAutocompleteProps> = ({
 
           {/* Footer note */}
           <div className="px-3 py-1.5 bg-[#0C0C12] border-t border-[#1F1F2E] flex items-center justify-between text-[10px] text-[#737380]">
-            <span>Click any result to instantly fill poster, date, and genres</span>
-            <span className="text-[#A3A392]">Powered by Wikipedia, TVMaze & iTunes</span>
+            <span>Click any result to auto-fill poster, date, and genres</span>
+            <span className="text-[#A3A392]">Powered by AniList, IMDb / Cinemeta & TMDB</span>
           </div>
         </div>
       )}

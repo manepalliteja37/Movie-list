@@ -13,6 +13,7 @@ import { Toast } from './components/common/Toast';
 import { KeyboardShortcutsModal } from './components/common/KeyboardShortcutsModal';
 import { OnboardingModal } from './components/common/OnboardingModal';
 import { CookieConsentBanner } from './components/common/CookieConsentBanner';
+import { MobileSplashScreen } from './components/common/MobileSplashScreen';
 import { AnimatedRoutes } from './AnimatedRoutes';
 import { useMovieStore } from './store/useMovieStore';
 import { Movie } from './types/movie';
@@ -24,6 +25,7 @@ function MainAppShell() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isSplashOpen, setIsSplashOpen] = useState(false);
   const [movieToEdit, setMovieToEdit] = useState<Movie | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -56,7 +58,11 @@ function MainAppShell() {
     const performReleaseCheck = async () => {
       try {
         const result = await checkMovieReleases(movies, settings.notifications, updateMovie);
-        if (result.newlyReleasedMovies.length > 0) {
+        if (result.generatedAlerts && result.generatedAlerts.length > 0) {
+          result.generatedAlerts.forEach((alert) => {
+            addReleaseAlert(alert);
+          });
+        } else if (result.newlyReleasedMovies.length > 0) {
           result.newlyReleasedMovies.forEach((m) => {
             addReleaseAlert({
               id: nanoid(),
@@ -172,9 +178,15 @@ function MainAppShell() {
             onShowToast={handleAddSuccess}
             onOpenShortcuts={() => setIsShortcutsOpen(true)}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            onOpenSplash={() => setIsSplashOpen(true)}
           />
         </main>
       </div>
+
+      {/* Interactive Mobile Splash / Opening Screen */}
+      {isSplashOpen && (
+        <MobileSplashScreen onFinished={() => setIsSplashOpen(false)} />
+      )}
 
       {/* Floating Action Button (+) at bottom-right, styled as film reel icon in red circle */}
       <FloatingAddButton onClick={() => handleOpenAddModal()} />

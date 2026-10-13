@@ -63,7 +63,7 @@ export const WatchlistFilterBar: React.FC<WatchlistFilterBarProps> = ({ isWatche
     filters.sortBy !== (isWatchedPage ? 'recentWatched' : 'recent');
 
   return (
-    <div className="space-y-3.5 bg-[#14141C] border border-[#20202E] p-4 sm:p-5 rounded-2xl shadow-xl">
+    <div className="space-y-3 bg-[#14141C] border border-[#20202E] p-3 sm:p-5 rounded-2xl shadow-xl">
       {/* 1. Search Bar at Top (searches title, synopsis, notes) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <div className="relative flex-1">
@@ -160,70 +160,75 @@ export const WatchlistFilterBar: React.FC<WatchlistFilterBarProps> = ({ isWatche
       </div>
 
       {/* 3. Dropdowns Row & Upcoming Only Toggle */}
-      <div className="pt-2 border-t border-[#1C1C28] flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Genre multi-select dropdown */}
-          <MultiSelectDropdown
-            label="Genre"
-            options={COMMON_GENRES}
-            selected={filters.genres}
-            onChange={(genres) => setFilters({ genres })}
-            icon={<Layers size={13} />}
-          />
+      <div className="pt-2 border-t border-[#1C1C28]">
+        {/* Compact Filter Row: Fits in 1 single row on standard screens, wraps cleanly into 2 compact rows if constrained */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 justify-start sm:justify-between">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {/* Genre multi-select dropdown */}
+            <MultiSelectDropdown
+              label="Genre"
+              options={COMMON_GENRES}
+              selected={filters.genres}
+              onChange={(genres) => setFilters({ genres })}
+              icon={<Layers size={12} />}
+            />
 
-          {/* Platform multi-select dropdown */}
-          <MultiSelectDropdown
-            label="Platform"
-            options={COMMON_PLATFORMS}
-            selected={filters.platforms}
-            onChange={(platforms) => setFilters({ platforms })}
-            icon={<MonitorPlay size={13} />}
-          />
+            {/* Platform multi-select dropdown */}
+            <MultiSelectDropdown
+              label="Platform"
+              options={COMMON_PLATFORMS}
+              selected={filters.platforms}
+              onChange={(platforms) => setFilters({ platforms })}
+              icon={<MonitorPlay size={12} />}
+            />
 
-          {/* Language multi-select dropdown */}
-          <MultiSelectDropdown
-            label="Language"
-            options={COMMON_LANGUAGES}
-            selected={filters.languages}
-            onChange={(languages) => setFilters({ languages })}
-            icon={<Globe size={13} />}
-          />
-        </div>
-
-        {/* Upcoming Only Toggle (Watchlist page only) */}
-        {!isWatchedPage && (
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2.5 text-xs font-medium text-[#A3A392] cursor-pointer select-none bg-[#0A0A0F] border border-[#262638] px-3 py-1.5 rounded-xl hover:border-[#38384d] transition-colors upcoming-toggle-label">
-              <input
-                type="checkbox"
-                checked={filters.upcomingOnly}
-                onChange={(e) => setFilters({ upcomingOnly: e.target.checked })}
-                className="sr-only"
-              />
-
-              {/* Custom Image-Grounded Toggle UI (Pill Track + White Circular Handle + Directional Chevron) */}
-              <div
-                className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 upcoming-toggle-track toggle-track ${filters.upcomingOnly ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
-                  }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${filters.upcomingOnly ? 'translate-x-[20px]' : 'translate-x-0'
-                    }`}
-                >
-                  {filters.upcomingOnly ? (
-                    <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
-                  ) : (
-                    <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
-                  )}
-                </div>
-              </div>
-
-              <span className={filters.upcomingOnly ? 'text-[#F5B301] font-semibold' : 'text-[#A3A392]'}>
-                Upcoming Only
-              </span>
-            </label>
+            {/* Language multi-select dropdown */}
+            <MultiSelectDropdown
+              label="Language"
+              options={COMMON_LANGUAGES}
+              selected={filters.languages}
+              onChange={(languages) => setFilters({ languages })}
+              icon={<Globe size={12} />}
+            />
           </div>
-        )}
+
+          {/* Upcoming Only Toggle (Watchlist page only) */}
+          {!isWatchedPage && (
+            <div className="flex items-center">
+              <label className="h-8 sm:h-9 flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium text-[#A3A392] cursor-pointer select-none bg-[#0A0A0F] border border-[#262638] px-2 sm:px-3 py-1 rounded-xl hover:border-[#38384d] transition-colors upcoming-toggle-label whitespace-nowrap">
+                <span className={filters.upcomingOnly ? 'text-[#F5B301] font-semibold' : 'text-[#A3A392]'}>
+                  Upcoming Only
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={filters.upcomingOnly}
+                  onChange={(e) => setFilters({ upcomingOnly: e.target.checked })}
+                  className="sr-only"
+                />
+
+                {/* Custom Compact Toggle UI */}
+                <div
+                  className={`relative w-7.5 sm:w-8.5 h-4.5 sm:h-5 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 upcoming-toggle-track toggle-track ${
+                    filters.upcomingOnly ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
+                  }`}
+                >
+                  <div
+                    className={`w-3.5 sm:w-4 h-3.5 sm:h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${
+                      filters.upcomingOnly ? 'translate-x-[12px] sm:translate-x-[14px]' : 'translate-x-0'
+                    }`}
+                  >
+                    {filters.upcomingOnly ? (
+                      <ChevronLeft size={10} className="text-[#1A1A24] stroke-[2.5]" />
+                    ) : (
+                      <ChevronRight size={10} className="text-[#1A1A24] stroke-[2.5]" />
+                    )}
+                  </div>
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ interface MultiSelectDropdownProps {
   selected: string[];
   onChange: (selected: string[]) => void;
   icon?: React.ReactNode;
+  className?: string;
 }
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -15,6 +16,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   selected,
   onChange,
   icon,
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -45,38 +47,42 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   const hasSelection = selected.length > 0;
 
   return (
-    <div className="relative inline-block text-left multi-select-dropdown" ref={dropdownRef}>
+    <div className={`relative inline-block text-left multi-select-dropdown ${className}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`h-9 px-3 rounded-xl text-xs font-medium border flex items-center gap-2 transition-all cursor-pointer select-none whitespace-nowrap dropdown-trigger-btn ${
+        className={`h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-medium border flex items-center justify-between gap-1 sm:gap-2 transition-all cursor-pointer select-none whitespace-nowrap dropdown-trigger-btn ${
           hasSelection
             ? 'bg-[#181824] border-[#F5B301] text-[#F5B301] shadow-[0_0_12px_rgba(245,179,1,0.15)]'
             : 'bg-[#0A0A0F] border-[#262638] text-[#A3A392] hover:text-[#F5F5DC] hover:border-[#F5B301]/60'
         }`}
       >
-        {icon && <span className="text-current opacity-80">{icon}</span>}
-        <span>{label}</span>
-        {hasSelection && (
-          <span className="w-4 h-4 rounded-full bg-[#F5B301] text-[#0A0A0F] text-[10px] font-bold flex items-center justify-center font-mono shrink-0">
-            {selected.length}
-          </span>
-        )}
-        {hasSelection ? (
-          <span
-            onClick={clearSelection}
-            className="p-0.5 hover:text-white rounded-full hover:bg-white/10"
-            title="Clear filter"
-          >
-            <X size={12} />
-          </span>
-        ) : (
-          <ChevronDown
-            size={13}
-            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          />
-        )}
+        <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+          {icon && <span className="text-current opacity-80 shrink-0">{icon}</span>}
+          <span>{label}</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {hasSelection && (
+            <span className="w-4 h-4 rounded-full bg-[#F5B301] text-[#0A0A0F] text-[10px] font-bold flex items-center justify-center font-mono shrink-0">
+              {selected.length}
+            </span>
+          )}
+          {hasSelection ? (
+            <span
+              onClick={clearSelection}
+              className="p-0.5 hover:text-white rounded-full hover:bg-white/10"
+              title="Clear filter"
+            >
+              <X size={12} />
+            </span>
+          ) : (
+            <ChevronDown
+              size={12}
+              className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          )}
+        </div>
       </button>
 
       {isOpen && (

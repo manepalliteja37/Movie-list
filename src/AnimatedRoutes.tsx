@@ -17,6 +17,7 @@ interface AnimatedRoutesProps {
   onShowToast: (msg: string) => void;
   onOpenShortcuts: () => void;
   onOpenOnboarding: () => void;
+  onOpenSplash?: () => void;
 }
 
 export const AnimatedRoutes: React.FC<AnimatedRoutesProps> = ({
@@ -24,6 +25,7 @@ export const AnimatedRoutes: React.FC<AnimatedRoutesProps> = ({
   onShowToast,
   onOpenShortcuts,
   onOpenOnboarding,
+  onOpenSplash,
 }) => {
   const location = useLocation();
   const { settings } = useMovieStore();
@@ -80,6 +82,7 @@ export const AnimatedRoutes: React.FC<AnimatedRoutesProps> = ({
                 onShowToast={onShowToast}
                 onOpenShortcuts={onOpenShortcuts}
                 onOpenOnboarding={onOpenOnboarding}
+                onOpenSplash={onOpenSplash}
               />
             }
           />

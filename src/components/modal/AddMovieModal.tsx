@@ -827,43 +827,176 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({
               </div>
             </div>
 
-            {/* Smart Notification toggle if unreleased */}
-            {!isReleased && (
-              <div className="p-3 bg-[#1C1810] border border-[#F5B301]/40 rounded-xl flex items-center justify-between animate-fade-in mt-1 notify-release-banner">
-                <div className="flex items-center gap-2">
-                  <Bell size={16} className="text-[#F5B301] animate-bounce" />
-                  <div>
-                    <div className="text-xs font-medium text-[#F5F5DC]">
-                      Notify me on release day
+            {/* Movie Lovers Slang Notification Banners */}
+            {!isReleased ? (
+              /* Case 1: Unreleased / Upcoming Countdown */
+              <div className="p-3.5 bg-gradient-to-r from-[#1C180E] via-[#14120A] to-[#1E190F] border border-[#F5B301]/50 rounded-2xl animate-fade-in mt-1 shadow-lg space-y-2.5 notify-release-banner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#F5B301]/20 border border-[#F5B301]/40 flex items-center justify-center text-[#F5B301] shrink-0">
+                      <Bell size={16} className="animate-bounce" />
                     </div>
-                    <div className="text-[10px] text-[#A3A392]">
-                      Send alert when available to watch or stream
+                    <div>
+                      <div className="text-xs font-semibold text-[#F5B301] flex items-center gap-1.5">
+                        <span>Movie Lovers Premiere Countdown</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-[#F5B301]/20 text-[#F5B301]">
+                          3-Stage Alerts
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#A3A392]">
+                        Automated device alerts sent using movie lovers slang
+                      </div>
                     </div>
                   </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={notifyOnRelease}
-                    onChange={(e) => setNotifyOnRelease(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifyOnRelease ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
-                      }`}
-                  >
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={notifyOnRelease}
+                      onChange={(e) => setNotifyOnRelease(e.target.checked)}
+                      className="sr-only"
+                    />
                     <div
-                      className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifyOnRelease ? 'translate-x-[20px]' : 'translate-x-0'
+                      className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifyOnRelease ? 'bg-[#F5B301]' : 'bg-[#1E1E2A]'
                         }`}
                     >
-                      {notifyOnRelease ? (
-                        <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
-                      ) : (
-                        <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
-                      )}
+                      <div
+                        className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifyOnRelease ? 'translate-x-[20px]' : 'translate-x-0'
+                          }`}
+                      >
+                        {notifyOnRelease ? (
+                          <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                        ) : (
+                          <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {notifyOnRelease && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-[#2C2414] text-[11px]">
+                    <div className="p-2 rounded-xl bg-[#0A0A0F]/80 border border-[#2A2416] space-y-0.5">
+                      <div className="font-semibold text-[#F5B301] flex items-center gap-1">
+                        <span>🎟️ Before 7 Days:</span>
+                      </div>
+                      <div className="text-[#F5F5DC] font-medium text-[11px]">
+                        "Did you plan to watch the movie?"
+                      </div>
+                      <div className="text-[#737380] text-[10px]">
+                        Weekly reminder to make watch plans & gather your gang.
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-[#0A0A0F]/80 border border-[#2A2416] space-y-0.5">
+                      <div className="font-semibold text-[#FF5A6E] flex items-center gap-1">
+                        <span>🍿 Before 3 Days:</span>
+                      </div>
+                      <div className="text-[#F5F5DC] font-medium text-[11px]">
+                        "Did you buy a ticket?"
+                      </div>
+                      <div className="text-[#737380] text-[10px]">
+                        Advance bookings open alert before housefull signs go up.
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-[#0A0A0F]/80 border border-[#2A2416] space-y-0.5">
+                      <div className="font-semibold text-emerald-400 flex items-center gap-1">
+                        <span>🎬 On Release Day:</span>
+                      </div>
+                      <div className="text-[#F5F5DC] font-medium text-[11px]">
+                        "Go watch in nearby theatres!"
+                      </div>
+                      <div className="text-[#737380] text-[10px]">
+                        First Day First Show (FDFS) big-screen experience alert.
+                      </div>
                     </div>
                   </div>
-                </label>
+                )}
+              </div>
+            ) : (
+              /* Case 2: Released / Available on OTT Check-in Reminders */
+              <div className="p-3.5 bg-gradient-to-r from-[#0E1624] via-[#0A101C] to-[#121828] border border-[#38BDF8]/40 rounded-2xl animate-fade-in mt-1 shadow-lg space-y-2.5 notify-release-banner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#0284C7]/20 border border-[#38BDF8]/40 flex items-center justify-center text-[#38BDF8] shrink-0">
+                      <Sparkles size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-[#38BDF8] flex items-center gap-1.5">
+                        <span>OTT & Watchlist Check-In Alerts</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-[#0284C7]/20 text-[#38BDF8]">
+                          Cinephile Slang
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#A3A392]">
+                        Reminds you to watch and review queue titles
+                      </div>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={notifyOnRelease}
+                      onChange={(e) => setNotifyOnRelease(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex items-center p-0.5 shrink-0 toggle-track ${notifyOnRelease ? 'bg-[#38BDF8]' : 'bg-[#1E1E2A]'
+                        }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-300 transform ${notifyOnRelease ? 'translate-x-[20px]' : 'translate-x-0'
+                          }`}
+                      >
+                        {notifyOnRelease ? (
+                          <ChevronLeft size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                        ) : (
+                          <ChevronRight size={13} className="text-[#1A1A24] stroke-[2.5]" />
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {notifyOnRelease && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-[#182638] text-[11px]">
+                    <div className="p-2 rounded-xl bg-[#0A0A0F]/80 border border-[#162234] space-y-0.5">
+                      <div className="font-semibold text-[#38BDF8] flex items-center gap-1">
+                        <span>🍿 In 2–3 Days:</span>
+                      </div>
+                      <div className="text-[#F5F5DC] font-medium text-[11px]">
+                        "Did you watch it yet?"
+                      </div>
+                      <div className="text-[#737380] text-[10px]">
+                        Reminds you it's streaming now on {platforms[0] || 'OTT'}.
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-[#0A0A0F]/80 border border-[#162234] space-y-0.5">
+                      <div className="font-semibold text-[#C084FC] flex items-center gap-1">
+                        <span>⭐ In 5–7 Days:</span>
+                      </div>
+                      <div className="text-[#F5F5DC] font-medium text-[11px]">
+                        "Did you watch, how was it?"
+                      </div>
+                      <div className="text-[#737380] text-[10px]">
+                        Prompts you to rate out of 10 and drop your review.
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-[#0A0A0F]/80 border border-[#162234] space-y-0.5">
+                      <div className="font-semibold text-[#FB7185] flex items-center gap-1">
+                        <span>🎟️ After Watching:</span>
+                      </div>
+                      <div className="text-[#F5F5DC] font-medium text-[11px]">
+                        "Did you recommend to a friend?"
+                      </div>
+                      <div className="text-[#737380] text-[10px]">
+                        Prompts you to share your collectible cinema ticket pass.
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

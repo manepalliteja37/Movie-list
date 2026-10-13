@@ -6,6 +6,7 @@
  */
 
 import { ContentType, COMMON_GENRES, COMMON_LANGUAGES } from '../types/movie';
+import { useMovieStore } from '../store/useMovieStore';
 
 export interface SmartFetchMovieResult {
   id: string;
@@ -22,7 +23,7 @@ export interface SmartFetchMovieResult {
   posterUrl?: string;
   synopsis?: string;
   trailerUrl?: string;
-  source: 'wikipedia' | 'tvmaze' | 'itunes';
+  source: 'wikipedia' | 'tvmaze' | 'itunes' | 'anilist' | 'cinemeta' | 'tmdb' | 'omdb';
   sourceLabel: string;
   confidence: number;
 }
@@ -354,13 +355,497 @@ async function searchITunes(query: string): Promise<SmartFetchMovieResult[]> {
   }
 }
 
+/**
+ * Search AniList GraphQL API for anime series and movies.
+ * 100% free, keyless, CORS-enabled, official GraphQL endpoint.
+ */
+export async function searchAniList(query: string): Promise<SmartFetchMovieResult[]> {
+  try {
+    const gql = `
+      query ($search: String) {
+        Page(page: 1, perPage: 6) {
+          media(search: $search, type: ANIME, sort: SEARCH_MATCH) {
+            id
+            title {
+              romaji
+              english
+              native
+            }
+            format
+            description(asHtml: false)
+            startDate {
+              year
+              month
+              day
+            }
+            genres
+            averageScore
+            coverImage {
+              extraLarge
+              large
+            }
+            bannerImage
+            trailer {
+              id
+              site
+            }
+          }
+        }
+      }
+    `;
+
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ query: gql, variables: { search: query } }),
+    });
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    const mediaList = data.data?.Page?.media || [];
+
+    return mediaList.map((m: any) => {
+      const englishTitle = m.title?.english;
+      const romajiTitle = m.title?.romaji;
+      const nativeTitle = m.title?.native;
+      const titleName = englishTitle || romajiTitle || query;
+      const year = m.startDate?.year;
+
+      let releaseDate: string | undefined;
+      if (m.startDate?.year && m.startDate?.month && m.startDate?.day) {
+        const mm = String(m.startDate.month).padStart(2, '0');
+        const dd = String(m.startDate.day).padStart(2, '0');
+        releaseDate = `${m.startDate.year}-${mm}-${dd}`;
+      } else if (year) {
+        releaseDate = `${year}-01-01`;
+      }
+
+      const genres = Array.isArray(m.genres) && m.genres.length > 0 ? [...m.genres] : ['Animation'];
+      if (!genres.includes('Animation')) {
+        genres.push('Animation');
+      }
+
+      const rawDesc = m.description || '';
+      const cleanSynopsis = rawDesc.replace(/<[^>]+>/g, '').trim();
+      const posterUrl = m.coverImage?.extraLarge || m.coverImage?.large;
+
+      let trailerUrl: string | undefined;
+      if (m.trailer?.site === 'youtube' && m.trailer?.id) {
+        trailerUrl = `https://www.youtube.com/watch?v=${m.trailer.id}`;
+      }
+
+      return {
+        id: `anilist-${m.id}`,
+        title: titleName,
+        cleanTitle: titleName,
+        displayTitle: year ? `${titleName} (${year})` : titleName,
+        originalTitle: nativeTitle || (romajiTitle !== titleName ? romajiTitle : undefined),
+        contentType: 'anime' as ContentType,
+        year,
+        releaseDate,
+        genres,
+        languages: ['Japanese'],
+        posterUrl,
+        synopsis: cleanSynopsis,
+        trailerUrl,
+        source: 'anilist' as const,
+        sourceLabel: 'AniList Anime DB',
+        confidence: 0.98,
+      };
+    });
+  } catch (err) {
+    console.warn('AniList search failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Fallback Anime search via Jikan (Unofficial MyAnimeList API)
+ */
+export async function searchJikan(query: string): Promise<SmartFetchMovieResult[]> {
+  try {
+    const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=4`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const items = data.data || [];
+
+    return items.map((item: any) => {
+      const titleName = item.title_english || item.title || query;
+      const year = item.year || item.aired?.prop?.from?.year;
+      let releaseDate: string | undefined;
+      if (item.aired?.from) {
+        releaseDate = item.aired.from.split('T')[0];
+      } else if (year) {
+        releaseDate = `${year}-01-01`;
+      }
+
+      const genres = (item.genres || []).map((g: any) => g.name).filter(Boolean);
+      if (!genres.includes('Animation')) genres.push('Animation');
+
+      const posterUrl = item.images?.webp?.large_image_url || item.images?.jpg?.large_image_url;
+
+      return {
+        id: `jikan-${item.mal_id}`,
+        title: titleName,
+        cleanTitle: titleName,
+        displayTitle: year ? `${titleName} (${year})` : titleName,
+        originalTitle: item.title_japanese,
+        contentType: 'anime' as ContentType,
+        year,
+        releaseDate,
+        genres,
+        languages: ['Japanese'],
+        posterUrl,
+        synopsis: item.synopsis ? item.synopsis.replace(/\[Written by MAL Rewrite\]/g, '').trim() : undefined,
+        trailerUrl: item.trailer?.url,
+        source: 'anilist' as const,
+        sourceLabel: 'Jikan Anime DB',
+        confidence: 0.92,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Search Cinemeta (Open IMDB Movie & Series database)
+ * 100% free, keyless, CORS-enabled.
+ * Fetches recent releases (e.g. 2024, 2025, 2026), Telugu, Bollywood, Hollywood, and global cinema.
+ */
+export async function searchCinemeta(
+  query: string,
+  preferredType?: ContentType
+): Promise<SmartFetchMovieResult[]> {
+  try {
+    const encoded = encodeURIComponent(query);
+    const promises: Promise<any>[] = [];
+
+    if (preferredType !== 'series' && preferredType !== 'anime') {
+      promises.push(
+        fetch(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${encoded}.json`)
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+      );
+    }
+    if (preferredType !== 'movie' && preferredType !== 'shortfilm') {
+      promises.push(
+        fetch(`https://v3-cinemeta.strem.io/catalog/series/top/search=${encoded}.json`)
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+      );
+    }
+
+    const responses = await Promise.all(promises);
+    const items: any[] = [];
+    for (const res of responses) {
+      if (res?.metas) {
+        items.push(...res.metas);
+      }
+    }
+
+    if (items.length === 0) return [];
+
+    const topItems = items.slice(0, 4);
+    const enrichedResults: SmartFetchMovieResult[] = await Promise.all(
+      topItems.map(async (item: any) => {
+        const itemType = item.type === 'series' ? 'series' : 'movie';
+        let detail: any = item;
+        try {
+          const detailRes = await fetch(
+            `https://v3-cinemeta.strem.io/meta/${itemType}/${item.id}.json`
+          );
+          if (detailRes.ok) {
+            const detailJson = await detailRes.json();
+            if (detailJson.meta) {
+              detail = detailJson.meta;
+            }
+          }
+        } catch {
+          // fallback
+        }
+
+        const year = detail.year
+          ? parseInt(String(detail.year).slice(0, 4), 10)
+          : detail.releaseInfo
+          ? parseInt(String(detail.releaseInfo).slice(0, 4), 10)
+          : undefined;
+
+        let releaseDate: string | undefined;
+        if (detail.released) {
+          const d = detail.released.split('T')[0];
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+            releaseDate = d;
+          }
+        }
+        if (!releaseDate && year) {
+          releaseDate = `${year}-01-01`;
+        }
+
+        let genres: string[] = [];
+        if (Array.isArray(detail.genres) && detail.genres.length > 0) {
+          genres = detail.genres;
+        } else {
+          genres = extractGenresFromText(`${detail.name} ${detail.description || ''}`);
+        }
+
+        let posterUrl = detail.poster;
+        if (posterUrl) {
+          if (posterUrl.includes('images.metahub.space/poster/small/')) {
+            posterUrl = posterUrl.replace('/poster/small/', '/poster/medium/');
+          } else if (posterUrl.includes('m.media-amazon.com/images/M/') && posterUrl.includes('._V1_')) {
+            posterUrl = posterUrl.replace(/\._V1_.*?\.jpg$/, '._V1_SX1000.jpg');
+          }
+        }
+
+        const isSeries = itemType === 'series';
+        const contentType: ContentType = isSeries ? 'series' : 'movie';
+
+        return {
+          id: `cinemeta-${detail.id || detail.imdb_id}`,
+          title: detail.name || query,
+          cleanTitle: detail.name || query,
+          displayTitle: year ? `${detail.name} (${year})` : detail.name,
+          contentType,
+          year,
+          releaseDate,
+          genres,
+          languages: extractLanguagesFromText(`${detail.name} ${detail.description || ''}`),
+          posterUrl,
+          synopsis: detail.description,
+          source: 'cinemeta' as const,
+          sourceLabel: 'IMDb / Cinemeta DB',
+          confidence: 0.95,
+        };
+      })
+    );
+
+    return enrichedResults;
+  } catch (err) {
+    console.warn('Cinemeta search failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Search TMDB Multi (Movies & TV Series) with user's TMDB API key.
+ */
+export async function searchTMDB(
+  query: string,
+  apiKey: string,
+  preferredType?: ContentType
+): Promise<SmartFetchMovieResult[]> {
+  if (!apiKey || !apiKey.trim()) return [];
+  try {
+    const url = `https://api.themoviedb.org/3/search/multi?api_key=${encodeURIComponent(
+      apiKey.trim()
+    )}&query=${encodeURIComponent(query)}&include_adult=false`;
+
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results = (data.results || []).slice(0, 5);
+
+    const TMDB_GENRES: Record<number, string> = {
+      28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+      99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+      27: 'Horror', 10402: 'Musical', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+      10770: 'Cinema', 53: 'Thriller', 10752: 'War', 37: 'Western',
+      10759: 'Action', 10765: 'Sci-Fi', 10768: 'War',
+    };
+
+    return results
+      .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
+      .map((item: any) => {
+        const isTv = item.media_type === 'tv';
+        const title = isTv ? item.name : item.title;
+        const originalTitle = isTv ? item.original_name : item.original_title;
+        const rawDate = isTv ? item.first_air_date : item.release_date;
+        const year = rawDate ? parseInt(rawDate.slice(0, 4), 10) : undefined;
+        const releaseDate = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : (year ? `${year}-01-01` : undefined);
+
+        let contentType: ContentType = isTv ? 'series' : 'movie';
+        if (item.genre_ids?.includes(16) && (item.origin_country?.includes('JP') || item.original_language === 'ja')) {
+          contentType = 'anime';
+        }
+
+        const genres = (item.genre_ids || [])
+          .map((gid: number) => TMDB_GENRES[gid])
+          .filter(Boolean);
+        if (genres.length === 0) genres.push(isTv ? 'Drama' : 'Cinema');
+
+        const posterUrl = item.poster_path
+          ? `https://image.tmdb.org/t/p/w780${item.poster_path}`
+          : undefined;
+
+        const langCode = item.original_language;
+        const languages = langCode === 'te' ? ['Telugu'] :
+                          langCode === 'hi' ? ['Hindi'] :
+                          langCode === 'ta' ? ['Tamil'] :
+                          langCode === 'ja' ? ['Japanese'] :
+                          langCode === 'ko' ? ['Korean'] :
+                          langCode === 'es' ? ['Spanish'] :
+                          langCode === 'fr' ? ['French'] : ['English'];
+
+        return {
+          id: `tmdb-${item.id}`,
+          title: title || query,
+          cleanTitle: title || query,
+          displayTitle: year ? `${title} (${year})` : title,
+          originalTitle: originalTitle !== title ? originalTitle : undefined,
+          contentType,
+          year,
+          releaseDate,
+          genres,
+          languages,
+          posterUrl,
+          synopsis: item.overview,
+          source: 'tmdb' as const,
+          sourceLabel: 'TMDB Official API',
+          confidence: 0.99,
+        };
+      });
+  } catch (err) {
+    console.warn('TMDB search failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Search OMDb API with user's OMDb API key.
+ */
+export async function searchOMDb(
+  query: string,
+  apiKey: string,
+  preferredType?: ContentType
+): Promise<SmartFetchMovieResult[]> {
+  if (!apiKey || !apiKey.trim()) return [];
+  try {
+    const typeParam = preferredType === 'series' ? '&type=series' : preferredType === 'movie' ? '&type=movie' : '';
+    const searchUrl = `https://www.omdbapi.com/?apikey=${encodeURIComponent(apiKey.trim())}&s=${encodeURIComponent(query)}${typeParam}`;
+
+    const res = await fetch(searchUrl);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (data.Response === 'False' || !data.Search) return [];
+
+    const items = data.Search.slice(0, 4);
+    const enriched: SmartFetchMovieResult[] = await Promise.all(
+      items.map(async (item: any) => {
+        let detail: any = item;
+        try {
+          const detailRes = await fetch(
+            `https://www.omdbapi.com/?apikey=${encodeURIComponent(apiKey.trim())}&i=${item.imdbID}&plot=full`
+          );
+          if (detailRes.ok) {
+            const dj = await detailRes.json();
+            if (dj.Response !== 'False') detail = dj;
+          }
+        } catch {
+          // fallback to item
+        }
+
+        const year = detail.Year ? parseInt(detail.Year.slice(0, 4), 10) : undefined;
+        let releaseDate: string | undefined;
+        if (detail.Released && detail.Released !== 'N/A') {
+          const parsed = new Date(detail.Released);
+          if (!isNaN(parsed.getTime())) {
+            releaseDate = parsed.toISOString().split('T')[0];
+          }
+        }
+        if (!releaseDate && year) {
+          releaseDate = `${year}-01-01`;
+        }
+
+        const genres = detail.Genre && detail.Genre !== 'N/A'
+          ? detail.Genre.split(',').map((g: string) => g.trim())
+          : ['Cinema'];
+
+        const languages = detail.Language && detail.Language !== 'N/A'
+          ? detail.Language.split(',').map((l: string) => l.trim())
+          : ['English'];
+
+        const posterUrl = detail.Poster && detail.Poster !== 'N/A' ? detail.Poster : undefined;
+        const contentType: ContentType = detail.Type === 'series' ? 'series' : 'movie';
+
+        return {
+          id: `omdb-${detail.imdbID}`,
+          title: detail.Title || query,
+          cleanTitle: detail.Title || query,
+          displayTitle: year ? `${detail.Title} (${year})` : detail.Title,
+          contentType,
+          year,
+          releaseDate,
+          genres,
+          languages,
+          posterUrl,
+          synopsis: detail.Plot !== 'N/A' ? detail.Plot : undefined,
+          source: 'omdb' as const,
+          sourceLabel: 'OMDb API',
+          confidence: 0.96,
+        };
+      })
+    );
+
+    return enriched;
+  } catch (err) {
+    console.warn('OMDb search failed:', err);
+    return [];
+  }
+}
+
 export interface WebPosterCandidate {
   id: string;
   url: string;
   title: string;
-  source: 'wikipedia' | 'itunes' | 'tvmaze' | 'wikimedia' | 'custom';
+  source: 'wikipedia' | 'itunes' | 'tvmaze' | 'wikimedia' | 'custom' | 'anilist' | 'cinemeta' | 'tmdb' | 'omdb';
   sourceLabel: string;
   year?: number;
+}
+
+/**
+ * Searches AniList for anime cover posters
+ */
+async function searchAniListPosters(query: string): Promise<WebPosterCandidate[]> {
+  try {
+    const results = await searchAniList(query);
+    return results
+      .filter((r) => r.posterUrl)
+      .map((r) => ({
+        id: `anilist-poster-${r.id}`,
+        url: r.posterUrl!,
+        title: r.title,
+        source: 'anilist' as const,
+        sourceLabel: 'AniList HD Anime Artwork',
+        year: r.year,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Searches Cinemeta / IMDb for movie & show posters
+ */
+async function searchCinemetaPosters(query: string): Promise<WebPosterCandidate[]> {
+  try {
+    const results = await searchCinemeta(query);
+    return results
+      .filter((r) => r.posterUrl)
+      .map((r) => ({
+        id: `cinemeta-poster-${r.id}`,
+        url: r.posterUrl!,
+        title: r.title,
+        source: 'cinemeta' as const,
+        sourceLabel: 'IMDb / Cinemeta Poster',
+        year: r.year,
+      }));
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -472,8 +957,7 @@ async function searchTVMazePosters(query: string): Promise<WebPosterCandidate[]>
 
 /**
  * Dedicated fetcher for Web Posters:
- * Aggregates high-res poster candidates across Wikipedia, Apple iTunes, and TVMaze
- * with zero required keys and instant CORS resolution.
+ * Aggregates high-res poster candidates across AniList, Cinemeta, TMDB, iTunes, Wikipedia, and TVMaze.
  */
 export async function fetchPosterCandidates(
   query: string,
@@ -482,14 +966,39 @@ export async function fetchPosterCandidates(
   const trimmed = query.trim();
   if (!trimmed || trimmed.length < 2) return [];
 
+  let tmdbKey = '';
   try {
-    const [wikiPosters, itunesPosters, tvmazePosters] = await Promise.all([
-      searchWikipediaPosters(trimmed),
-      searchITunesPosters(trimmed),
-      preferredType === 'movie' ? Promise.resolve([]) : searchTVMazePosters(trimmed),
-    ]);
+    tmdbKey = useMovieStore.getState().settings?.tmdbApiKey || '';
+  } catch {}
 
-    const all = [...itunesPosters, ...wikiPosters, ...tvmazePosters];
+  try {
+    const promises: Promise<WebPosterCandidate[]>[] = [
+      searchCinemetaPosters(trimmed),
+      searchAniListPosters(trimmed),
+      searchITunesPosters(trimmed),
+      searchWikipediaPosters(trimmed),
+      preferredType === 'movie' ? Promise.resolve([]) : searchTVMazePosters(trimmed),
+    ];
+
+    if (tmdbKey) {
+      promises.push(
+        searchTMDB(trimmed, tmdbKey, preferredType).then((res) =>
+          res
+            .filter((r) => r.posterUrl)
+            .map((r) => ({
+              id: `tmdb-poster-${r.id}`,
+              url: r.posterUrl!,
+              title: r.title,
+              source: 'tmdb' as const,
+              sourceLabel: 'TMDB Official Poster',
+              year: r.year,
+            }))
+        )
+      );
+    }
+
+    const posterArrays = await Promise.all(promises);
+    const all = posterArrays.flat();
     const seenUrls = new Set<string>();
     const unique: WebPosterCandidate[] = [];
 
@@ -500,7 +1009,7 @@ export async function fetchPosterCandidates(
       }
     }
 
-    return unique.slice(0, 10);
+    return unique.slice(0, 12);
   } catch (err) {
     console.error('fetchPosterCandidates failed:', err);
     return [];
@@ -510,6 +1019,8 @@ export async function fetchPosterCandidates(
 /**
  * Main Smart Fetch Search API: Queries multi-source knowledge bases,
  * ranks and deduplicates, and returns rich movie metadata.
+ * Supported sources: AniList GraphQL, Cinemeta (IMDb), TVMaze, iTunes, Wikipedia/Wikidata,
+ * plus user-configured TMDB and OMDb API keys.
  */
 export async function smartFetchMovieMetadata(
   query: string,
@@ -518,35 +1029,85 @@ export async function smartFetchMovieMetadata(
   const trimmed = query.trim();
   if (!trimmed || trimmed.length < 2) return [];
 
-  // Run in parallel
-  const [wikiResults, tvmazeResults, itunesResults] = await Promise.all([
-    searchWikipedia(trimmed),
+  // Safely check stored API keys from Zustand store
+  let tmdbKey = '';
+  let omdbKey = '';
+  try {
+    const settings = useMovieStore.getState().settings;
+    tmdbKey = settings?.tmdbApiKey || '';
+    omdbKey = settings?.omdbApiKey || '';
+  } catch {}
+
+  // If user explicitly selected anime, search AniList first with Jikan fallback
+  if (preferredType === 'anime') {
+    const aniResults = await searchAniList(trimmed);
+    if (aniResults.length > 0) {
+      return aniResults.slice(0, 6);
+    }
+    const jikanResults = await searchJikan(trimmed);
+    if (jikanResults.length > 0) {
+      return jikanResults.slice(0, 6);
+    }
+  }
+
+  // Run multi-source parallel fetch
+  const searchPromises: Promise<SmartFetchMovieResult[]>[] = [
+    // 1. AniList for anime matches (zero key needed)
+    searchAniList(trimmed),
+    // 2. Cinemeta for recent movies & TV series (zero key needed, open IMDb data)
+    searchCinemeta(trimmed, preferredType),
+    // 3. TVMaze for TV & streaming series (zero key needed)
     preferredType === 'movie' ? Promise.resolve([]) : searchTVMaze(trimmed),
+    // 4. iTunes media database (zero key needed)
     preferredType === 'series' ? Promise.resolve([]) : searchITunes(trimmed),
-  ]);
+    // 5. Wikipedia cinema database (zero key needed)
+    searchWikipedia(trimmed),
+  ];
 
-  // Combine and deduplicate
-  const allResults = [...wikiResults, ...tvmazeResults, ...itunesResults];
+  // 6. TMDB API if user configured API key
+  if (tmdbKey) {
+    searchPromises.push(searchTMDB(trimmed, tmdbKey, preferredType));
+  }
 
+  // 7. OMDb API if user configured API key
+  if (omdbKey) {
+    searchPromises.push(searchOMDb(trimmed, omdbKey, preferredType));
+  }
+
+  const resultsBySource = await Promise.all(searchPromises);
+  const allResults = resultsBySource.flat();
+
+  // Deduplicate and rank results
   const seen = new Set<string>();
   const uniqueResults: SmartFetchMovieResult[] = [];
 
-  // Sort: prioritize results that have a posterUrl and high confidence
+  // Ranking strategy:
+  // 1. Boost results that have a posterUrl
+  // 2. Boost results matching preferredType
+  // 3. Consider source confidence
   allResults.sort((a, b) => {
+    // Has poster prioritized
     if (a.posterUrl && !b.posterUrl) return -1;
     if (!a.posterUrl && b.posterUrl) return 1;
+
+    // Preferred type match priority
+    if (preferredType) {
+      if (a.contentType === preferredType && b.contentType !== preferredType) return -1;
+      if (b.contentType === preferredType && a.contentType !== preferredType) return 1;
+    }
+
     return b.confidence - a.confidence;
   });
 
   for (const item of allResults) {
-    const key = `${item.cleanTitle.toLowerCase()}-${item.year || ''}-${item.contentType}`;
+    const key = `${item.cleanTitle.toLowerCase().replace(/[^a-z0-9]/g, '')}-${item.year || ''}-${item.contentType}`;
     if (!seen.has(key)) {
       seen.add(key);
       uniqueResults.push(item);
     }
   }
 
-  return uniqueResults.slice(0, 6);
+  return uniqueResults.slice(0, 7);
 }
 
 /**

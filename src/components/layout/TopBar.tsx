@@ -27,6 +27,7 @@ export const TopBar: React.FC<TopBarProps> = () => {
         <Link
           to="/"
           className="flex items-center gap-1.5 sm:gap-2 group cursor-pointer focus:outline-none shrink-0"
+          title="Movielist - Cinematic Watchlist"
         >
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#14141C] border border-[#28283C] flex items-center justify-center text-[#F5B301] shadow-[0_0_12px_rgba(245,179,1,0.15)] group-hover:border-[#F5B301]/50 group-hover:scale-105 transition-transform duration-300">
             <FilmReelIcon size={20} className="sm:w-[22px] sm:h-[22px] animate-spin-slow" />

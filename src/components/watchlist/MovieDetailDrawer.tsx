@@ -630,7 +630,10 @@ export const MovieDetailDrawer: React.FC<MovieDetailDrawerProps> = ({
       <ShareMovieModal
         movie={movie}
         isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          onClose();
+        }}
         onShowToast={onShowToast}
       />
 
